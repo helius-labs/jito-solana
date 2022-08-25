@@ -6,6 +6,7 @@ use {
         transaction_processing_callback::TransactionProcessingCallback,
     },
     itertools::Itertools,
+    log::info,
     solana_compute_budget::compute_budget_processor::{
         process_compute_budget_instructions, ComputeBudgetLimits,
     },

@@ -2538,7 +2538,11 @@ dependencies = [
 
 [[package]]
 name = "jito-protos"
+<<<<<<< HEAD
 version = "1.18.23"
+=======
+version = "1.18.22"
+>>>>>>> jito patch
 dependencies = [
  "bytes",
  "prost",
@@ -5087,7 +5091,11 @@ dependencies = [
 
 [[package]]
 name = "solana-bundle"
+<<<<<<< HEAD
 version = "1.18.23"
+=======
+version = "1.18.22"
+>>>>>>> jito patch
 dependencies = [
  "anchor-lang",
  "itertools",
@@ -6073,7 +6081,11 @@ dependencies = [
 
 [[package]]
 name = "solana-runtime-plugin"
+<<<<<<< HEAD
 version = "1.18.23"
+=======
+version = "1.18.22"
+>>>>>>> jito patch
 dependencies = [
  "crossbeam-channel",
  "json5",

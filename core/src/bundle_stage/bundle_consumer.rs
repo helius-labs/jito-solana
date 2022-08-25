@@ -936,7 +936,7 @@ mod tests {
                 lamports_per_signature: DEFAULT_TARGET_LAMPORTS_PER_SIGNATURE / 2,
                 ..FeeRateGovernor::default()
             },
-            rent, // most tests don't expect rent
+            rent.clone(), // most tests don't expect rent
             ClusterType::Development,
             spl_programs(&rent),
         );

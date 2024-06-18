@@ -10,6 +10,7 @@ use {
         net::{IpAddr, Ipv4Addr, SocketAddr},
         slice::SliceIndex,
     },
+    crate::pubkey::Pubkey,
 };
 
 #[cfg(test)]
@@ -45,6 +46,7 @@ pub struct Meta {
     pub addr: IpAddr,
     pub port: u16,
     pub flags: PacketFlags,
+    pub remote_pubkey: Option<Pubkey>,
 }
 
 #[cfg(RUSTC_WITH_SPECIALIZATION)]
@@ -219,6 +221,10 @@ impl Meta {
         self.flags
             .set(PacketFlags::FROM_STAKED_NODE, from_staked_node);
     }
+ 
+    pub fn set_remote_pubkey(&mut self, pubkey: &Option<Pubkey>) {
+        self.remote_pubkey = pubkey.clone();
+    }
 
     #[inline]
     pub fn discard(&self) -> bool {
@@ -286,6 +292,7 @@ impl Default for Meta {
             addr: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
             port: 0,
             flags: PacketFlags::empty(),
+            remote_pubkey: None,
         }
     }
 }

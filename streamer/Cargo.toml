@@ -32,6 +32,7 @@ smallvec = { workspace = true }
 solana-metrics = { workspace = true }
 solana-perf = { workspace = true }
 solana-sdk = { workspace = true }
+solana-transaction-tracing = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 x509-parser = { workspace = true }

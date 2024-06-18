@@ -27,6 +27,7 @@ use {
         feature_set::include_loaded_accounts_data_size_in_fee_calculation, fee::FeeBudgetLimits,
         saturating_add_assign, timing::AtomicInterval, transaction::SanitizedTransaction,
     },
+    solana_transaction_tracing::maybe_trace_packet,
     std::{
         sync::{Arc, RwLock},
         time::Duration,
@@ -319,6 +320,7 @@ impl SchedulerController {
             let (transactions, fee_budget_limits_vec): (Vec<_>, Vec<_>) = chunk
                 .iter()
                 .filter_map(|packet| {
+                    maybe_trace_packet("bank-build-sanitized-txn", &packet.original_packet());
                     packet.build_sanitized_transaction(feature_set, vote_only, bank.as_ref())
                 })
                 .inspect(|_| saturating_add_assign!(post_sanitization_count, 1))
@@ -368,8 +370,10 @@ impl SchedulerController {
                     cost,
                 ) {
                     saturating_add_assign!(self.count_metrics.num_dropped_on_capacity, 1);
+                    //maybe_trace_packet("bank-txn-insert-dropped", &packet.original_packet());
                 }
                 saturating_add_assign!(self.count_metrics.num_buffered, 1);
+                //maybe_trace_packet("bank-txn-inserted", &packet.original_packet());
             }
 
             // Update metrics for transactions that were dropped.

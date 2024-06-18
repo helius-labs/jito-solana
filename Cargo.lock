@@ -6208,6 +6208,7 @@ dependencies = [
  "solana-streamer",
  "solana-tpu-client",
  "solana-transaction-status",
+ "solana-transaction-tracing",
  "solana-turbine",
  "solana-unified-scheduler-pool",
  "solana-version",
@@ -7599,6 +7600,7 @@ dependencies = [
  "solana-metrics",
  "solana-perf",
  "solana-sdk",
+ "solana-transaction-tracing",
  "thiserror",
  "tokio",
  "x509-parser",
@@ -7803,6 +7805,16 @@ dependencies = [
  "spl-token",
  "spl-token-2022",
  "thiserror",
+]
+
+[[package]]
+name = "solana-transaction-tracing"
+version = "1.18.16"
+dependencies = [
+ "bs58 0.4.0",
+ "log",
+ "solana-perf",
+ "solana-sdk",
 ]
 
 [[package]]

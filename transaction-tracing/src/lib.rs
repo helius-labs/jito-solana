@@ -28,7 +28,8 @@ pub fn get_signature_from_packet(packet: &Packet) -> Result<&[u8; SIGNATURE_BYTE
 
 pub fn should_trace(packet: &Packet) -> bool {
     // TODO add sig info
-    packet.meta().addr.to_string() == "127.0.0.1"
+    packet.meta().addr.to_string() == "127.0.0.1" ||
+        packet.meta().remote_pubkey.map(|b| bs58::encode(b).into_string()).unwrap_or("".into()) == "HEL1USMZKAL2odpNBj2oCjffnFGaYwmbGmyewGv1e2TU"
 }
 
 pub fn trace_packet(checkpoint: &'static str, packet: &Packet) {

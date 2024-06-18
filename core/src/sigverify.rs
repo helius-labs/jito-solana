@@ -14,6 +14,7 @@ use {
     },
     solana_perf::{cuda_runtime::PinnedVec, packet::PacketBatch, recycler::Recycler, sigverify},
     solana_sdk::{packet::Packet, saturating_add_assign},
+    solana_transaction_tracing::maybe_trace_packet,
 };
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, AbiExample)]
@@ -104,6 +105,7 @@ impl SigVerifier for TransactionSigVerifier {
                 }
             }
         }
+        maybe_trace_packet("sigverify-recv", packet);
     }
 
     #[inline(always)]
@@ -111,6 +113,7 @@ impl SigVerifier for TransactionSigVerifier {
         if packet.meta().is_tracer_packet() {
             self.tracer_packet_stats.total_excess_tracer_packets += 1;
         }
+        maybe_trace_packet("sigverify-excess", packet);
     }
 
     #[inline(always)]
@@ -119,6 +122,7 @@ impl SigVerifier for TransactionSigVerifier {
             self.tracer_packet_stats
                 .total_tracker_packets_passed_sigverify += 1;
         }
+        maybe_trace_packet("sigverify-passed", packet);
     }
 
     fn send_packets(

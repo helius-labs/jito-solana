@@ -32,6 +32,7 @@ use {
         signature::Keypair,
         timing,
     },
+    solana_transaction_tracing::maybe_trace_packet,
     std::{
         iter::repeat_with,
         net::{IpAddr, SocketAddr, UdpSocket},
@@ -746,6 +747,7 @@ async fn packet_batch_sender(
                 stats
                     .total_chunks_processed_by_batcher
                     .fetch_add(num_chunks, Ordering::Relaxed);
+                maybe_trace_packet("batching", &packet_batch[i]);
             }
         }
     }
@@ -847,6 +849,7 @@ async fn handle_connection(
                                     &packet_sender,
                                     stats.clone(),
                                     params.peer_type,
+                                    &params.remote_pubkey,
                                 )
                                 .await
                                 {
@@ -899,6 +902,7 @@ async fn handle_chunk(
     packet_sender: &AsyncSender<PacketAccumulator>,
     stats: Arc<StreamStats>,
     peer_type: ConnectionPeerType,
+    remote_pubkey: &Option<Pubkey>,
 ) -> bool {
     match chunk {
         Ok(maybe_chunk) => {
@@ -926,6 +930,7 @@ async fn handle_chunk(
                     let mut meta = Meta::default();
                     meta.set_socket_addr(remote_addr);
                     meta.set_from_staked_node(matches!(peer_type, ConnectionPeerType::Staked(_)));
+                    meta.set_remote_pubkey(remote_pubkey);
                     *packet_accum = Some(PacketAccumulator {
                         meta,
                         chunks: SmallVec::new(),

@@ -110,6 +110,7 @@ members = [
     "tpu-client",
     "transaction-dos",
     "transaction-status",
+    "transaction-tracing",
     "turbine",
     "udp-client",
     "unified-scheduler-logic",

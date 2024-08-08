@@ -7819,7 +7819,7 @@ dependencies = [
 
 [[package]]
 name = "solana-transaction-tracing"
-version = "1.18.18"
+version = "1.18.23"
 dependencies = [
  "bs58 0.4.0",
  "log",

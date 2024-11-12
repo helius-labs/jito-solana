@@ -1,5 +1,5 @@
 # This workflow runs a periodic rebase process, pulling in updates from an upstream repository
-# The workflow for rebasing a jito-solana branch to a solana labs branch locally is typically:
+# The workflow for rebasing a helius jito branch to a helius agave branch locally is typically:
 # $ git checkout v1.17
 # $ git pull --rebase # --rebase needed locally
 # $ git branch -D lb/v1.17_rebase # deletes branch from last v1.17 rebase
@@ -16,13 +16,13 @@
 # It will also run CI and wait for it to pass before performing the force push to v1.17.
 # In the event there's a failure in the process, it's reported to slack and the job stops.
 
-name: "Rebase jito-solana from upstream anza-xyz/agave"
+name: "Rebase helius from upstream anza-xyz/agave"
 
 on:
   #  push:
   schedule:
-    - cron: "00 19 * * 1-5"
-
+    - cron: "00 20 * * 1-5"
+  workflow_dispatch:
 jobs:
   rebase:
     runs-on: ubuntu-latest
@@ -31,13 +31,13 @@ jobs:
         include:
           - branch: master
             upstream_branch: master
-            upstream_repo: https://github.com/anza-xyz/agave.git
+            upstream_repo: https://github.com/helius-labs/agave.git
           - branch: v2.0
             upstream_branch: v2.0
-            upstream_repo: https://github.com/anza-xyz/agave.git
-          - branch: v1.18
-            upstream_branch: v1.18
-            upstream_repo: https://github.com/solana-labs/solana.git
+            upstream_repo: https://github.com/helius-labs/agave.git
+          - branch: v2.1
+            upstream_branch: v2.1
+            upstream_repo: https://github.com/helius-labs/agave.git
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +45,6 @@ jobs:
           ref: ${{ matrix.branch }}
           submodules: recursive
           fetch-depth: 0
-          token: ${{ secrets.JITO_SOLANA_RELEASE_TOKEN }}
       - name: Add upstream
         run: git remote add upstream ${{ matrix.upstream_repo }}
       - name: Fetch upstream
@@ -60,94 +59,42 @@ jobs:
         run: git checkout -b $REBASE_BRANCH
       - name: Setup email
         run: |
-          git config --global user.email "infra@jito.wtf"
-          git config --global user.name "Jito Infrastructure"
+          git config --global user.email "liam@helius.xyz"
+          git config --global user.name "Helius Infrastructure"
       - name: Rebase
         id: rebase
         run: git rebase upstream/${{ matrix.upstream_branch }}
-      - name: Send warning for rebase error
-        if: failure() && steps.rebase.outcome == 'failure'
-        uses: slackapi/slack-github-action@v1.25.0
-        with:
-          payload: |
-            {
-              "text": "Nightly rebase on branch ${{ matrix.branch }}\nStatus: Rebase failed to apply cleanly"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - name: Check if rebase applied
         id: check_rebase_applied
+        continue-on-error: true
         run: |
           PRE_REBASE_SHA=$(git rev-parse ${{ matrix.branch }})
           POST_REBASE_SHA=$(git rev-parse HEAD)
           if [ "$PRE_REBASE_SHA" = "$POST_REBASE_SHA" ]; then
-            echo "No rebase was applied, exiting..."
-            exit 1
+            echo "NEEDS_REBASE=false" >> $GITHUB_ENV
+            echo "No rebase needed, skipping remaining steps..."
           else
+            echo "NEEDS_REBASE=true" >> $GITHUB_ENV
             echo "Rebase applied successfully."
           fi
-      - name: Send warning for rebase error
-        if: failure() && steps.check_rebase_applied.outcome == 'failure'
-        uses: slackapi/slack-github-action@v1.25.0
-        with:
-          payload: |
-            {
-              "text": "Nightly rebase on branch ${{ matrix.branch }}\nStatus: Rebase not needed"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
       - name: Set REBASE_SHA
+        if: env.NEEDS_REBASE == 'true'
         run: echo "REBASE_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
       - name: Push changes
+        if: env.NEEDS_REBASE == 'true'
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.REBASE_BRANCH }}
-      - name: Wait for buildkite to start build
-        run: sleep 300
-      - name: Wait for buildkite to finish
-        id: wait_for_buildkite
-        timeout-minutes: 300
-        run: |
-          while true; do
-            response=$(curl -s -f -H "Authorization: Bearer ${{ secrets.BUILDKITE_TOKEN }}" "https://api.buildkite.com/v2/organizations/jito/pipelines/jito-solana/builds?commit=${{ env.REBASE_SHA }}")
-            if [ $? -ne 0 ]; then
-              echo "Curl request failed."
-              exit 1
-            fi
 
-            state=$(echo $response | jq --exit-status -r '.[0].state')
-            echo "Current build state: $state"
-
-            # Check if the state is one of the finished states
-            case $state in
-              "passed"|"finished")
-                echo "Build finished successfully."
-                exit 0
-              ;;
-              "canceled"|"canceling"|"not_run")
-                # ignoring "failing"|"failed" because flaky CI, can restart and hope it finishes or times out
-                echo "Build failed or was cancelled."
-                exit 2
-              ;;
-            esac
-
-          sleep 30
-          done
-      - name: Send failure update
-        uses: slackapi/slack-github-action@v1.25.0
-        if: failure() && steps.wait_for_buildkite.outcome == 'failure'
-        with:
-          payload: |
-            {
-              "text": "Nightly rebase on branch ${{ matrix.branch }}\nStatus: CI failed\nBranch: ${{ env.REBASE_BRANCH}}\nBuild: https://buildkite.com/jito/jito-solana/builds?commit=${{ env.REBASE_SHA }}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      # check to see if different branch since CI build can take awhile and these steps are not atomic
       - name: Fetch the latest remote changes
+        if: env.NEEDS_REBASE == 'true'
         run: git fetch origin ${{ matrix.branch }}
-      - name: Check if origin HEAD has changed from the beginning of the workflow
+
+      - name: Check if origin HEAD has changed
+        if: env.NEEDS_REBASE == 'true'
         run: |
           LOCAL_SHA=$(git rev-parse ${{ matrix.branch }})
           ORIGIN_SHA=$(git rev-parse origin/${{ matrix.branch }})
@@ -159,22 +106,16 @@ jobs:
           else
             echo "The remote HEAD matches the local REBASE_SHA at the beginning of CI. Proceeding."
           fi
+
       - name: Reset ${{ matrix.branch }} to ${{ env.REBASE_BRANCH }}
+        if: env.NEEDS_REBASE == 'true'
         run: |
           git checkout ${{ matrix.branch }}
           git reset --hard ${{ env.REBASE_BRANCH }}
-      - name: Push rebased %{{ matrix.branch }}
+
+      - name: Push rebased ${{ matrix.branch }}
+        if: env.NEEDS_REBASE == 'true'
         uses: ad-m/github-push-action@master
         with:
-          github_token: ${{ secrets.JITO_SOLANA_RELEASE_TOKEN }}
           branch: ${{ matrix.branch }}
           force: true
-      - name: Send success update
-        uses: slackapi/slack-github-action@v1.25.0
-        with:
-          payload: |
-            {
-              "text": "Nightly rebase on branch ${{ matrix.branch }}\nStatus: CI success, rebased, and pushed\nBranch: ${{ env.REBASE_BRANCH}}\nBuild: https://buildkite.com/jito/jito-solana/builds?commit=${{ env.REBASE_SHA }}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

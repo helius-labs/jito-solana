@@ -35,9 +35,6 @@ jobs:
           - branch: v2.0
             upstream_branch: v2.0
             upstream_repo: https://github.com/helius-labs/agave.git
-          - branch: v2.1
-            upstream_branch: v2.1
-            upstream_repo: https://github.com/helius-labs/agave.git
       fail-fast: false
     steps:
       - uses: actions/checkout@v4

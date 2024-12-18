@@ -6483,6 +6483,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana-bundle"
+version = "2.1.9"
+dependencies = [
+ "anchor-lang",
+ "assert_matches",
+ "itertools 0.12.1",
+ "log",
+ "serde",
+ "sha2 0.10.8",
+ "solana-accounts-db",
+ "solana-ledger",
+ "solana-logger",
+ "solana-measure",
+ "solana-poh",
+ "solana-runtime",
+ "solana-sdk",
+ "solana-svm",
+ "solana-timings",
+ "solana-transaction-status",
+ "thiserror 1.0.65",
+]
+
+[[package]]
 name = "solana-cargo-build-sbf"
 version = "2.1.21"
 dependencies = [

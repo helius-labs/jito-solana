@@ -411,8 +411,15 @@ fn retransmit_shred(
         return None;
     }
     let mut compute_turbine_peers = Measure::start("turbine_start");
-    let (root_distance, addrs) =
-        get_retransmit_addrs(&key, root_bank, cache, addr_cache, socket_addr_space, stats)?;
+    let (root_distance, addrs) = get_retransmit_addrs(
+        &key,
+        root_bank,
+        cache,
+        addr_cache,
+        socket_addr_space,
+        stats,
+        shred_receiver_addr,
+    )?;
     compute_turbine_peers.stop();
     stats
         .compute_turbine_peers_total
@@ -497,6 +504,7 @@ fn get_retransmit_addrs<'a>(
     addr_cache: &'a AddrCache,
     socket_addr_space: &SocketAddrSpace,
     stats: &RetransmitStats,
+    shred_receiver_addr: &Option<SocketAddr>,
 ) -> Option<(/*root_distance:*/ u8, Cow<'a, [SocketAddr]>)> {
     if let Some((root_distance, addrs)) = addr_cache.get(shred) {
         stats.addr_cache_hit.fetch_add(1, Ordering::Relaxed);
@@ -504,7 +512,7 @@ fn get_retransmit_addrs<'a>(
     }
     let (slot_leader, cluster_nodes) = cache.get(&shred.slot())?;
     let data_plane_fanout = cluster_nodes::get_data_plane_fanout(shred.slot(), root_bank);
-    let (root_distance, addrs) = cluster_nodes
+    let (root_distance, mut addrs) = cluster_nodes
         .get_retransmit_addrs(slot_leader, shred, data_plane_fanout, socket_addr_space)
         .inspect_err(|err| match err {
             Error::Loopback { .. } => {
@@ -512,6 +520,9 @@ fn get_retransmit_addrs<'a>(
             }
         })
         .ok()?;
+    if let Some(shred_receiver_addr) = shred_receiver_addr {
+        addrs.push(*shred_receiver_addr);
+    }
     stats.addr_cache_miss.fetch_add(1, Ordering::Relaxed);
     Some((root_distance, Cow::Owned(addrs)))
 }

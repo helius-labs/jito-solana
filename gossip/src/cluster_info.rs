@@ -2410,6 +2410,7 @@ pub struct NodeConfig {
     pub gossip_addr: SocketAddr,
     pub port_range: PortRange,
     pub bind_ip_addr: IpAddr,
+    pub public_tvu_addr: Option<SocketAddr>,
     pub public_tpu_addr: Option<SocketAddr>,
     pub public_tpu_forwards_addr: Option<SocketAddr>,
     /// The number of TVU receive sockets to create
@@ -2737,6 +2738,7 @@ impl Node {
             gossip_addr,
             port_range,
             bind_ip_addr,
+            public_tvu_addr,
             public_tpu_addr,
             public_tpu_forwards_addr,
             num_tvu_receive_sockets,
@@ -2840,7 +2842,9 @@ impl Node {
         let addr = gossip_addr.ip();
         use contact_info::Protocol::{QUIC, UDP};
         info.set_gossip((addr, gossip_port)).unwrap();
-        info.set_tvu(UDP, (addr, tvu_port)).unwrap();
+        let tvu_endpoint = public_tvu_addr.unwrap_or_else(|| SocketAddr::new(addr, tvu_port));
+        info.set_tvu(UDP, (tvu_endpoint.ip(), tvu_endpoint.port()))
+            .unwrap();
         info.set_tvu(QUIC, (addr, tvu_quic_port)).unwrap();
         info.set_tpu(public_tpu_addr.unwrap_or_else(|| SocketAddr::new(addr, tpu_port)))
             .unwrap();
@@ -3324,6 +3328,7 @@ mod tests {
             gossip_addr: socketaddr!(ip, 0),
             port_range: VALIDATOR_PORT_RANGE,
             bind_ip_addr: IpAddr::V4(ip),
+            public_tvu_addr: None,
             public_tpu_addr: None,
             public_tpu_forwards_addr: None,
             num_tvu_receive_sockets: MINIMUM_NUM_TVU_RECEIVE_SOCKETS,
@@ -3348,6 +3353,7 @@ mod tests {
             gossip_addr: socketaddr!(Ipv4Addr::LOCALHOST, port),
             port_range,
             bind_ip_addr: ip,
+            public_tvu_addr: None,
             public_tpu_addr: None,
             public_tpu_forwards_addr: None,
             num_tvu_receive_sockets: MINIMUM_NUM_TVU_RECEIVE_SOCKETS,

@@ -81,6 +81,7 @@ pub fn app<'a>(version: &'a str, default_args: &'a DefaultArgs) -> App<'a, 'a> {
         .global_setting(AppSettings::InferSubcommands)
         .global_setting(AppSettings::UnifiedHelpMessage)
         .global_setting(AppSettings::VersionlessSubcommands)
+
         .arg(
             Arg::with_name(SKIP_SEED_PHRASE_VALIDATION_ARG.name)
                 .long(SKIP_SEED_PHRASE_VALIDATION_ARG.long)
@@ -405,6 +406,18 @@ pub fn app<'a>(version: &'a str, default_args: &'a DefaultArgs) -> App<'a, 'a> {
                 .help(
                     "Gossip DNS name or IP address for the validator to advertise in gossip \
                      [default: ask --entrypoint, or 127.0.0.1 when --entrypoint is not provided]",
+                ),
+        )
+        .arg(
+            Arg::with_name("public_tvu_addr")
+                .long("public-tvu-address")
+                .alias("tvu-host-addr")
+                .value_name("HOST:PORT")
+                .takes_value(true)
+                .validator(solana_net_utils::is_host_port)
+                .help(
+                    "Specify TVU address to advertise in gossip for receiving UDP shreds \
+             [default: ask --entrypoint or localhost when --entrypoint is not provided]",
                 ),
         )
         .arg(

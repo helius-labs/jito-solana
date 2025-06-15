@@ -1406,6 +1406,13 @@ pub fn main() {
         }),
     );
 
+    let public_tvu_addr = matches.value_of("public_tvu_addr").map(|public_tvu_addr| {
+        solana_net_utils::parse_host_port(public_tvu_addr).unwrap_or_else(|err| {
+            eprintln!("Failed to parse --public-tvu-address: {err}");
+            exit(1);
+        })
+    });
+
     let public_tpu_addr = matches.value_of("public_tpu_addr").map(|public_tpu_addr| {
         solana_net_utils::parse_host_port(public_tpu_addr).unwrap_or_else(|err| {
             eprintln!("Failed to parse --public-tpu-address: {err}");
@@ -1444,6 +1451,7 @@ pub fn main() {
         gossip_addr,
         port_range: dynamic_port_range,
         bind_ip_addr: bind_address,
+        public_tvu_addr,
         public_tpu_addr,
         public_tpu_forwards_addr,
         num_tvu_receive_sockets: tvu_receive_threads,

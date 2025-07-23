@@ -1449,6 +1449,18 @@ impl ConnectionTable {
             .checked_add(1)
             .map(|c| c <= max_connections_per_peer)
             .unwrap_or(false);
+
+        if let Some(connection) = &connection {
+            if let Some(pubkey) = get_remote_pubkey(connection) {
+                if pubkey.to_string() == "HEL1USMZKAL2odpNBj2oCjffnFGaYwmbGmyewGv1e2TU" {
+                    info!(
+                        "received connection from helius: {}: {}",
+                        connection.remote_address(),
+                        pubkey
+                    );
+                }
+            }
+        }
         if has_connection_capacity {
             let cancel = CancellationToken::new();
             let last_update = Arc::new(AtomicU64::new(last_update));
@@ -1469,15 +1481,6 @@ impl ConnectionTable {
             Some((last_update, cancel, stream_counter))
         } else {
             if let Some(connection) = connection {
-                if let Some(pubkey) = get_remote_pubkey(&connection) {
-                    if pubkey.to_string() == "HEL1USMZKAL2odpNBj2oCjffnFGaYwmbGmyewGv1e2TU" {
-                        info!(
-                            "closing connection due to too many connections: {}: {}",
-                            connection.remote_address(),
-                            pubkey
-                        );
-                    }
-                }
                 connection.close(
                     CONNECTION_CLOSE_CODE_TOO_MANY.into(),
                     CONNECTION_CLOSE_REASON_TOO_MANY,

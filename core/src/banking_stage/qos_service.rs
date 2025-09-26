@@ -107,11 +107,11 @@ impl QosService {
         transactions: impl Iterator<Item = &'a Tx>,
         transactions_costs: impl Iterator<Item = transaction::Result<TransactionCost<'a, Tx>>>,
         bank: &Bank,
-        block_cost_limit_reservation_cb: &impl Fn(&Bank) -> u64,
+        _: &impl Fn(&Bank) -> u64,
     ) -> (Vec<transaction::Result<TransactionCost<'a, Tx>>>, usize) {
         let mut cost_tracking_time = Measure::start("cost_tracking_time");
         let mut cost_tracker = bank.write_cost_tracker().unwrap();
-        let reservation_amount = block_cost_limit_reservation_cb(bank);
+        let reservation_amount = 0;
         let mut num_included = 0;
         let select_results = transactions
             .zip(transactions_costs)

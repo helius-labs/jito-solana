@@ -7,7 +7,6 @@ use {
     },
     crate::bundle_stage::bundle_account_locker::BundleAccountLocker,
     itertools::Itertools,
-    solana_accounts_db::contains::Contains,
     solana_clock::MAX_PROCESSING_AGE,
     solana_fee::FeeFeatures,
     solana_fee_structure::FeeBudgetLimits,
@@ -77,7 +76,6 @@ pub struct Consumer {
     transaction_recorder: TransactionRecorder,
     qos_service: QosService,
     log_messages_bytes_limit: Option<usize>,
-    bundle_account_locker: BundleAccountLocker,
 }
 
 impl Consumer {
@@ -86,14 +84,13 @@ impl Consumer {
         transaction_recorder: TransactionRecorder,
         qos_service: QosService,
         log_messages_bytes_limit: Option<usize>,
-        bundle_account_locker: BundleAccountLocker,
+        _: BundleAccountLocker,
     ) -> Self {
         Self {
             committer,
             transaction_recorder,
             qos_service,
             log_messages_bytes_limit,
-            bundle_account_locker,
         }
     }
 
@@ -191,17 +188,15 @@ impl Consumer {
         // Once accounts are locked, other threads cannot encode transactions that will modify the
         // same account state.
         // BundleAccountLocker is used to prevent race conditions with bundled transactions from bundle stage
-        let bundle_account_locks = self.bundle_account_locker.account_locks();
         let (batch, lock_us) = measure_us!(bank.prepare_sanitized_batch_with_results(
             txs,
             transaction_qos_cost_results.iter().map(|r| match r {
                 Ok(_cost) => Ok(()),
                 Err(err) => Err(err.clone()),
             }),
-            &|pubkey| { bundle_account_locks.read_locks().contains(pubkey) },
-            &|pubkey| { bundle_account_locks.write_locks().contains(pubkey) }
+            &|_| { false },
+            &|_| { false }
         ));
-        drop(bundle_account_locks);
 
         // retryable_txs includes AccountInUse, WouldExceedMaxBlockCostLimit
         // WouldExceedMaxAccountCostLimit, WouldExceedMaxVoteCostLimit
